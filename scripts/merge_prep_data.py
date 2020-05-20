@@ -20,7 +20,7 @@ class Merge_Data :
         self.loc_data = folder_scrape + '/CountyLevel_Google_LocData_Cleaned.csv'
 
         if census_folder is None :
-            census_folder = 'Nathan_Exploratory/cleaned_census_data/'
+            census_folder = 'manually_pulled/cleaned_census_data/'
         if not os.path.exists(census_folder) :
             raise ValueError('Census directory does not exist. Generate or manually update date_folder')
         files_out = []
@@ -29,13 +29,13 @@ class Merge_Data :
         self.census_files = files_out
 
         if orders_data is None :
-            orders_data = 'Noah_Exploratory/processed_orders.csv'
+            orders_data = 'manually_pulled/processed_orders.csv'
         if not os.path.exists(orders_data) :
             raise ValueError('Orders file does not exist. Generate or manually update date_folder')
         self.orders_data = orders_data
 
         if jail_data is None :
-            jail_data = 'Suplementary_Data/jail_population.csv'
+            jail_data = 'manually_pulled/jail_population.csv'
         if not os.path.exists(jail_data) :
             raise ValueError('Jail file does not exist. Generate or manually update date_folder')
         self.jail_data = jail_data
