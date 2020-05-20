@@ -1,0 +1,3 @@
+local_var.txt
+.ipynb_checkpoints*
+*__pycache__*
