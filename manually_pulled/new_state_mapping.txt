@@ -1,0 +1,60 @@
+State1	State2	State3	abrev	state_code
+Alabama	Alabama	Alabama	Ala.	AL
+Alaska	Alaska	Alaska	Alaska	AK
+American Samoa	NA	NA	NA	AS
+Arizona	Arizona	Arizona	Ariz.	AZ
+Arkansas	Arkansas	Arkansas	Ark.	AR
+California	California	California	Calif.	CA
+Colorado	Colorado	Colorado	Colo.	CO
+Connecticut	Connecticut	Connecticut	Conn.	CT
+Delaware	Delaware	Delaware	Del.	DE
+District of Columbia	District of Columbia	District of Columbia	D.C.	DC
+Florida	Florida	Florida	Fla.	FL
+Georgia	Georgia	Georgia_(U.S._state)	Ga.	GA
+Guam	Guam	NA	Guam	GU
+Hawaii	Hawaii	Hawaii	Hawaii	HI
+Idaho	Idaho	Idaho	Idaho	ID
+Illinois	Illinois	Illinois	Ill.	IL
+Indiana	Indiana	Indiana	Ind.	IN
+Iowa	Iowa	Iowa	Iowa	IA
+Kansas	Kansas	Kansas	Kans.	KS
+Kentucky	Kentucky	Kentucky	Ky.	KY
+Louisiana	Louisiana	Louisiana	La.	LA
+Maine	Maine	Maine	Maine	ME
+Maryland	Maryland	Maryland	Md.	MD
+Marshall Islands	NA	NA	NA	MH
+Massachusetts	Massachusetts	Massachusetts	Mass.	MA
+Michigan	Michigan	Michigan	Mich.	MI
+Micronesia	NA	NA	NA	FM
+Minnesota	Minnesota	Minnesota	Minn.	MN
+Mississippi	Mississippi	Mississippi	Miss.	MS
+Missouri	Missouri	Missouri	Mo.	MO
+Montana	Montana	Montana	Mont.	MT
+Nebraska	Nebraska	Nebraska	Nebr.	NE
+Nevada	Nevada	Nevada	Nev.	NV
+New Hampshire	New Hampshire	New_Hampshire	N.H.	NH
+New Jersey	New Jersey	New_Jersey	N.J.	NJ
+New Mexico	New Mexico	New_Mexico	N.M.	NM
+New York	New York	New_York	N.Y.	NY
+North Carolina	North Carolina	North_Carolina	N.C.	NC
+North Dakota	North Dakota	North_Dakota	N.D.	ND
+Northern Marianas	Northern Mariana Islands	NA	NA	MP
+Ohio	Ohio	Ohio	Ohio	OH
+Oklahoma	Oklahoma	Oklahoma	Okla.	OK
+Oregon	Oregon	Oregon	Ore.	OR
+Palau	NA	NA	NA	PW
+Pennsylvania	Pennsylvania	Pennsylvania	Pa.	PA
+Puerto Rico	Puerto Rico	NA	P.R.	PR
+Rhode Island	Rhode Island	Rhode_Island	R.I.	RI
+South Carolina	South Carolina	South_Carolina	S.C.	SC
+South Dakota	South Dakota	South_Dakota	S.D.	SD
+Tennessee	Tennessee	Tennessee	Tenn.	TN
+Texas	Texas	Texas	Tex.	TX
+Utah	Utah	Utah	Utah	UT
+Vermont	Vermont	Vermont	Vt.	VT
+Virginia	Virginia	Virginia	Va.	VA
+Virgin Islands	Virgin Islands	NA	V.I.	VI
+Washington	Washington	Washington	Wash.	WA
+West Virginia	West Virginia	West_Virginia	W.Va.	WV
+Wisconsin	Wisconsin	Wisconsin	Wis.	WI
+Wyoming	Wyoming	Wyoming	Wyo.	WY
