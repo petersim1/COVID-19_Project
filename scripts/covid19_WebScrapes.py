@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from urllib.request import urlopen
+from urllib.request import urlopen,Request
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
@@ -11,6 +11,7 @@ import math
 import time
 import io
 import os
+import zipfile
 from pdfminer.converter import HTMLConverter,TextConverter
 from pdfminer.pdfinterp import PDFPageInterpreter,PDFResourceManager
 from pdfminer.pdfpage import PDFPage
@@ -34,11 +35,12 @@ class TestingData_Scraper :
             column_range.append(date_add)
             date_add += datetime.timedelta(days=1)
         column_range = [datetime.datetime.strftime(date,'%m/%d/%y') for date in column_range]
-        column_range = ['/'.join([a.lstrip('0') for a in date.split('/')]) for date in column_range]
+        column_range_corrected = ['/'.join([a.lstrip('0') for a in date.split('/')]) for date in column_range]
         
-        self.date_columns = column_range
+        self.date_columns = column_range_corrected
+        self.date_mapping = dict(zip(column_range_corrected,column_range))
 
-    def Impute_Values(self,df) :
+    def Impute_Values(self,df) : # I think this logic might be broken slightly. Don't run for now, maybe come back to this.
 
         for i,v in df.iterrows() :
             cases_ck = v[self.date_columns].to_list()
@@ -69,6 +71,7 @@ class TestingData_Scraper :
 
         Testing_DF = cases
         Testing_DF['Deaths'] = deaths['Deaths']
+        Testing_DF['Date'] = Testing_DF['Date'].map(self.date_mapping)
         return Testing_DF
 
 
@@ -422,6 +425,42 @@ class Alphabet_Scrape_V2 :
         
         return csv_out
 
+class OrdersScrape :
+
+    def __init__(self) :
+
+        self.url = 'http://www.healthdata.org/covid/data-downloads'
+        req = Request(self.url,headers={'User-Agent': 'Mozilla/5.0'}) # avoids the permission issue.
+        html = urlopen(req).read()
+        soup = BeautifulSoup(html, 'html.parser')
+
+        for i,v in enumerate(soup.findAll('p')) :
+            try :
+                text = v.find('strong').getText()
+                if text == 'Previous data:' :
+                    index = i
+            except :
+                continue
+
+        self.link = soup.findAll('p')[index].findAll('a')[-1]['href']
+
+    
+    def getzip(self) :
+
+        req = Request(self.link,headers={'User-Agent': 'Mozilla/5.0'})
+
+        zip_file = zipfile.ZipFile(io.BytesIO(urlopen(req).read()))
+
+        count = 0
+        while True :
+            if 'Summary_stats_all_locs.csv' in zip_file.namelist()[count] :
+                file = zip_file.namelist()[count]
+                break
+            else :
+                count += 1
+        
+        return pd.read_csv(zip_file.open(file))
+
 
 class Clean_Data :
 
@@ -483,7 +522,6 @@ class Clean_Data :
                 inds_drop.append(i)
 
         cases_data = cases_data.drop(inds_drop,axis=0).reset_index(drop=True)
-        cases_data['Date'] = cases_data['Date'].apply(lambda x : '/'.join([i.zfill(2) for i in x.split('/')]))
 
         return cases_data
 
@@ -491,55 +529,25 @@ class Clean_Data :
 
         loc_data = loc_data_use.copy()
 
-        loc_data['sub_region_2'] = loc_data['sub_region_2'].apply(lambda x : x.replace('County','')\
-            .replace('Parish','').replace('St.','St')\
-            .replace('Borough','').strip() \
-            if isinstance(x,str) else 'Washington')
-        
-        loc_data['sub_region_1'] = loc_data['sub_region_1']\
-            .map(dict(zip(self.state_mapping['State2'],self.state_mapping['state_code'])))
+        loc_data['census_fips_code'] = loc_data['census_fips_code'].apply(lambda x : str(int(x)).zfill(5))
 
-        loc_data['unique_id'] = loc_data['sub_region_1']+'_'+loc_data['sub_region_2']
+        return loc_data.drop('iso_3166_2_code',axis=1)
 
-        sub_region_mapping = {}
-        seen = []
-        to_remove = []
-        
-        for _,v in loc_data.iterrows() :
-            if v['unique_id'] in seen :
-                continue
-            else :
-                seen.append(v['unique_id'])
-                if v['unique_id'] in self.fips['unique_id'].values :
-                    continue
-                else :
-                    count = 0
-                    if (sum(1 for c in v['sub_region_2'] if c.isupper()) > 1) and (' ' not in v['sub_region_2']) :
-                        to_add = v['sub_region_2'][:2] + ' ' + v['sub_region_2'][2:]
-                        count = 1
-                    if v['sub_region_1'] == 'VA' :
-                        to_add = v['sub_region_2'] + ' City'
-                        count = 1
-                    if "'s" in v['sub_region_2'] :
-                        to_add = v['sub_region_2'].replace("'",'')
-                        count = 1
-                    if 'ñ' in v['sub_region_2'] :
-                        to_add  = v['sub_region_2'].replace('ñ','n')
-                        count = 1
-                    if "O'Brien" in v['sub_region_2'] :
-                        to_add = 'O Brien'
-                        count = 1
-                        
-                    if count :
-                        sub_region_mapping[v['unique_id']] = v['sub_region_1']+'_'+to_add
-                    else :
-                        to_remove.append(v['unique_id'])
+    def Clean_Orders_Data(self,orders_data_use) :
 
-        
-        loc_data = loc_data.replace({'unique_id':sub_region_mapping})
-        loc_data = loc_data[~loc_data['unique_id'].isin(to_remove)].reset_index(drop=True)
+        orders_df = orders_data_use[orders_data_use['location_name'].isin(self.state_mapping['State1'])]
+        orders_df = orders_df.reset_index(drop=True)
+        orders_df['State_Abr'] = orders_df['location_name'].map(dict(zip(self.state_mapping['State1'],self.state_mapping['state_code'])))
+        orders_df['State_fip'] = orders_df['State_Abr'].map(self.state_fip)
 
-        loc_data = loc_data.merge(self.fips,how='left',on='unique_id')
+        inds_drop = []
+        for i,v in orders_df.iterrows() :
+            if int(v['State_fip']) > 56 :
+                inds_drop.append(i)
+                
+        orders_df = orders_df.drop(inds_drop,axis=0).reset_index(drop=True)
 
-        return loc_data
+        cols_keep = ['location_name','State_Abr','State_fip'] + [col for col in orders_df.columns if 'date' in col]
+
+        return orders_df[cols_keep]
         

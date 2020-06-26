@@ -15,8 +15,9 @@ merge_prep_data = SourceFileLoader("merge_data", "./scripts/merge_prep_data.py")
 
 
 # Generate the time series cases data.
+print('Generating the Cases data')
 covid19_county_level = covid19_WebScrapes.TestingData_Scraper()
-Testing_DF = covid19_county_level.Get_Final_DF(Impute = True)
+Testing_DF = covid19_county_level.Get_Final_DF(Impute = False) #Marked as False, I think logic is broken
 
 
 # Generage the algorand survey data.
@@ -32,6 +33,7 @@ Survey_DF_trim.columns = ['Country','Region','Zip','AgeGroup','Gender','Symptoma
 
 
 # Generate the area data
+print('Generating the Area data')
 wiki_scraper = covid19_WebScrapes.Wiki_Scrape()
 county_areas = wiki_scraper.Scrape_Counties()
 County_Areas = pd.DataFrame(county_areas,columns=['State','County_FIPS','County','Area (sqmi)'])
@@ -41,37 +43,49 @@ County_Areas['Area (sqmi)'] = County_Areas['Area (sqmi)'].astype(float)
 
 
 # Generate the Google Mobility time series data 
+print('Generating the Google Mobility Data')
 google = covid19_WebScrapes.Alphabet_Scrape_V2()
 google_df = google.get_Data(country='United States',country_only=False,state_only=False) #pulls county info only
 
+# Generate the Orders Data
+print('Generating the Orders Data')
+orders = covid19_WebScrapes.OrdersScrape()
+orders_df = orders.getzip()
+
 
 # Clean and merge data.
+print('Cleaning all data')
 data_cleaner = covid19_WebScrapes.Clean_Data('./manually_pulled/FIPS_Codes_USDA.csv',
                                              './manually_pulled/new_state_mapping.txt')
 area_data_cleaned = data_cleaner.Clean_Area_Data(County_Areas)
 test_data_cleaned = data_cleaner.Clean_Cases_Data(Testing_DF)
 google_data_cleaned = data_cleaner.Clean_Loc_Data(google_df)
+orders_data_cleaned = data_cleaner.Clean_Orders_Data(orders_df)
 
 folder_name = datetime.datetime.strftime(datetime.datetime.today(),'%d%b%y')
 os.mkdir('./Processed_Data/'+folder_name)
 
+print('Writing out cleaned data')
 test_data_cleaned.to_csv('./Processed_Data/'+folder_name+'/CountyLevel_Cases_Cleaned.csv',index=False)
 #Survey_DF_trim.to_csv('Processed_Data/'+folder_name+'/Survey_Data.csv',index=False)
 area_data_cleaned.to_csv('./Processed_Data/'+folder_name+'/CountyLevel_Areas_Cleaned.csv',index=False)
 google_data_cleaned.to_csv('./Processed_Data/'+folder_name+'/CountyLevel_Google_LocData_Cleaned.csv',index=False)
+orders_data_cleaned.to_csv('Processed_Data/'+folder_name+'/StateLevel_Orders_Cleaned.csv',index=False)
 
+print('Merging all data')
 data_merger = merge_prep_data.Merge_Data()
 merged_census_data = data_merger.Merge_Census_Data()
 merged_scraped_data = data_merger.Merge_Scraped_Data()
 final_merge = data_merger.MERGE_ALL(merged_scraped_data,merged_census_data)
 
-cols_remove = ['State_x','County_FIPS','County','Name','UID','iso2','iso3','code3','Province_State',
+cols_remove = ['County_FIPS','County','UID','iso2','iso3','code3','Province_State',
                'Country_Region','Combined_Key','country_region_code','country_region','sub_region_1',
-               'sub_region_2','date','unique_id','State_y','STATE_FIPS','Unnamed: 0','county','state_FIPS',
-              'county_fips']
+               'sub_region_2','date','State_fip','Unnamed: 0','county','state_FIPS',
+              'county_fips','census_fips_code']
 
 final_merge.drop(cols_remove,axis=1,inplace=True)
 
+print('Engineering Features')
 engineer_feats = merge_prep_data.Engineer_Feats(datatype_write_loc='./Merged_Data/data_types.json')
 
 DF_out = engineer_feats.Apply_Logic(final_merge)
@@ -110,6 +124,7 @@ cols_keep = ['FIPS','state','Admin2','Lat','Long_','Date',
              '%_public_transit_to_work', '%_bus_trolley_to_work', '%_walked_to_work',
              '%_cab_other_means_of_transportation_to_work','jail_incarceration_rate_per_100k']
 
+print('Writing out Merged Data (probably in chunks)')
 DF_write = DF_out[cols_keep]
 
 engineer_feats.write_out_json(DF_write)

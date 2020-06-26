@@ -7,7 +7,7 @@ import json
 
 class Merge_Data :
 
-    def __init__(self,date_folder=None,census_folder=None,orders_data=None,jail_data=None) :
+    def __init__(self,date_folder=None,census_folder=None,jail_data=None) :
 
         if date_folder is None :
             date_folder = datetime.datetime.strftime(datetime.datetime.today(),'%d%b%y')
@@ -18,6 +18,7 @@ class Merge_Data :
         self.area_data = folder_scrape + '/CountyLevel_Areas_Cleaned.csv'
         self.cases_data = folder_scrape + '/CountyLevel_Cases_Cleaned.csv'
         self.loc_data = folder_scrape + '/CountyLevel_Google_LocData_Cleaned.csv'
+        self.orders_data = folder_scrape + '/StateLevel_Orders_Cleaned.csv'
 
         if census_folder is None :
             census_folder = 'manually_pulled/cleaned_census_data/'
@@ -28,12 +29,6 @@ class Merge_Data :
             files_out.append(census_folder+'/'+f)
         self.census_files = files_out
 
-        if orders_data is None :
-            orders_data = 'manually_pulled/processed_orders.csv'
-        if not os.path.exists(orders_data) :
-            raise ValueError('Orders file does not exist. Generate or manually update date_folder')
-        self.orders_data = orders_data
-
         if jail_data is None :
             jail_data = 'manually_pulled/jail_population.csv'
         if not os.path.exists(jail_data) :
@@ -42,19 +37,6 @@ class Merge_Data :
 
         self._Prep_Orders()
 
-    def _Prep_Orders(self) :
-        orders = self._preserve_fips(self.orders_data,'STATE_FIPS',2)
-        orders_dict = {}
-
-        for _,v in orders.iterrows() :
-            state = v['STATE_FIPS']
-            to_add = {}
-            for col in orders.columns[1:-1] :
-                to_add[col] = v[col]
-            orders_dict[state] = to_add
-
-        self.orders_dict = orders_dict
-
     def _preserve_fips(self,file,col_preserve,zfill_val) :
 
         df = pd.read_csv(file)
@@ -62,15 +44,73 @@ class Merge_Data :
             if not pd.isna(x) else np.nan)
         return df
 
+    def _Prep_Orders(self) :
+        orders = self._preserve_fips(self.orders_data,'State_fip',2)
+
+        cols = []
+        for col in orders.columns :
+            if 'date' in col :
+                col_trim = '_'.join(col.split('_')[:-2])
+                if col_trim not in cols :
+                    cols.append(col_trim)
+
+        orders_dict = {}
+
+        for _,v in orders.iterrows() :
+            state = v['State_fip']
+            to_add = {}
+            for col in cols :
+                to_add[col] = {}
+                start = col + '_start_date'
+                end = col + '_end_date'
+                to_add[col]['start'] = v[start]
+                to_add[col]['end'] = v[end]
+            orders_dict[state] = to_add
+
+        self.orders_dict = orders_dict
+
     def Merge_Scraped_Data(self) :
 
         area = self._preserve_fips(self.area_data,'FIPS',5)
         cases = self._preserve_fips(self.cases_data,'FIPS',5)
-        loc_data = self._preserve_fips(self.loc_data,'FIPS',5)
+        loc_data = self._preserve_fips(self.loc_data,'census_fips_code',5)
 
         merged = area.merge(cases,how='right',on='FIPS')
 
-        return merged.merge(loc_data,how='left',left_on=['Date','FIPS'],right_on=['date','FIPS']).reset_index(drop=True)
+        merged = merged.merge(loc_data,how='left',left_on=['Date','FIPS'],right_on=['date','census_fips_code']).reset_index(drop=True)
+
+        merged['State_fip'] = merged['FIPS'].apply(lambda x : x[:2])
+
+        res_out = {name:[] for name in self.orders_dict['01'].keys()}
+        for _,v in merged.iterrows() :
+            state_fip = v['State_fip'] 
+            date = datetime.datetime.strptime(v['Date'],'%m/%d/%y')
+            for key in self.orders_dict[state_fip].keys() :
+                if pd.isna(self.orders_dict[state_fip][key]['start']) :
+                    res_out[key].append(0)
+                    continue
+                start_date_key = datetime.datetime.strptime(self.orders_dict[state_fip][key]['start'],'%Y-%m-%d')
+                if date >= start_date_key :
+                    if pd.isna(self.orders_dict[state_fip][key]['end']) :
+                        res_out[key].append(1)
+                    else :
+                        end_date_key = datetime.datetime.strptime(self.orders_dict[state_fip][key]['end'],'%Y-%m-%d')
+                        if date < end_date_key :
+                            res_out[key].append(1)
+                        else :
+                            res_out[key].append(0) 
+                else :
+                    res_out[key].append(0) 
+
+        orders_out = pd.DataFrame(res_out)
+        orders_out.columns = ['Travel severely limited','Stay at home order','Educational facilities closed',
+                              'Mass gathering restrictions','Initial business closure',
+                              'Non-essential services closed']
+        orders_out = orders_out[['Mass gathering restrictions','Initial business closure',
+                            'Educational facilities closed','Non-essential services closed',
+                            'Stay at home order','Travel severely limited']] # Needed to match order prior to update.
+
+        return merged.join(orders_out)
 
     def Merge_Census_Data(self) :
         
@@ -94,27 +134,8 @@ class Merge_Data :
         jail['FIPS'] = jail['fips']
         jail['Date'] = jail['date'].apply(lambda x : datetime.datetime.strftime(datetime.datetime.strptime(x,'%Y-%m-%d'),'%m/%d/%y'))
 
-        merged_scraped_data = merged_scraped_data_use.copy()
 
-        merged_scraped_data['STATE_FIPS'] = merged_scraped_data['FIPS'].apply(lambda x : x[:2])
-
-        res_out = {name:[] for name in self.orders_dict['01'].keys()}
-        for _,v in merged_scraped_data.iterrows() :
-            state_fip = v['STATE_FIPS'] 
-            date = datetime.datetime.strptime(v['Date'],'%m/%d/%y')
-            for key in self.orders_dict[state_fip].keys() :
-                if pd.isna(self.orders_dict[state_fip][key]) :
-                    res_out[key].append(0)
-                    continue
-                date_key = datetime.datetime.strptime(self.orders_dict[state_fip][key],'%m/%d/%y')
-                if date >= date_key :
-                    res_out[key].append(1)
-                else :
-                    res_out[key].append(0)     
-
-        merged_scraped_data = merged_scraped_data.join(pd.DataFrame(res_out))
-
-        merged_out = merged_scraped_data.merge(merged_census_data_use,how='left',left_on='FIPS',right_on='county_fips')
+        merged_out = merged_scraped_data_use.merge(merged_census_data_use,how='left',left_on='FIPS',right_on='county_fips')
 
         merged_out = merged_out.merge(jail[['FIPS','Date','jail_incarceration_rate_per_100k']],how='left',
                       on=['FIPS','Date'])
