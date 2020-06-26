@@ -20,7 +20,7 @@ Next to Assess the Google Trend data, which is important time dependent data tha
 
 ![](plots/NY_google_data.png)
 
-Now for the predictive model. An AdaBoost model with Decision Tree Regressor base estimators was used to predict the Number of Positive Cases, normalized to a county's population size. I normalized it to population size so that the target variable was a normal distribution. This makes it easy to transform predictions back to the absolute Positive Cases Value. In all, the $R^2$ value was $>.94$
+Now for the predictive model. An AdaBoost model with Decision Tree Regressor base estimators was used to predict the Number of Positive Cases, normalized to a county's population size. I normalized it to population size so that the target variable was a normal distribution. This makes it easy to transform predictions back to the absolute Positive Cases Value. In all, the R^2 value was >.94
 
 ![](plots/R2_normalized.png)
 ![](plots/R2_transformed.png)
