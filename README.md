@@ -29,3 +29,7 @@ These predicted values are for 7 days in the future, since there is higher utili
 
 ![](plots/predictions_10APR20.png)
 ![](plots/predictions_23MAY20.png)
+
+While the goal of the project was to predict a relative risk, the model still does quite well in predicting trends over time. Now that enough data is present to observe steady increases, plateaus, and resurgences of cases, it's great to see that the model was capable of capturing all of these types.
+
+![](plots/Truth_Comparisons.png)
