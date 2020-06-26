@@ -27,8 +27,8 @@ Now for the predictive model. An AdaBoost model with Decision Tree Regressor bas
 
 These predicted values are for 7 days in the future, since there is higher utility in predicting number of cases 7 days out compared to just the following day. Predicted values can be normalized to produced plots such as the following.
 
-![](plots/predictions_10APR20.png)
-![](plots/predictions_23MAY20.png)
+![](plots/predictions_10Apr20.png)
+![](plots/predictions_23May20.png)
 
 While the goal of the project was to predict a relative risk, the model still does quite well in predicting trends over time. Now that enough data is present to observe steady increases, plateaus, and resurgences of cases, it's great to see that the model was capable of capturing all of these types.
 
