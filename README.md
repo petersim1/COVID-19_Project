@@ -20,12 +20,16 @@ Next to Assess the Google Trend data, which is important time dependent data tha
 
 ![](plots/NY_google_data.png)
 
-Now for the predictive model. An AdaBoost model with Decision Tree Regressor base estimators was used to predict the Number of Positive Cases, normalized to a county's population size. I normalized it to population size so that the target variable was a normal distribution. This makes it easy to transform predictions back to the absolute Positive Cases Value. In all, the $R^2$ value was $>.94$
+Now for the predictive model. An AdaBoost model with Decision Tree Regressor base estimators was used to predict the Number of Positive Cases, normalized to a county's population size. I normalized it to population size so that the target variable was a normal distribution. This makes it easy to transform predictions back to the absolute Positive Cases Value. In all, the R^2 value was >.94
 
 ![](plots/R2_normalized.png)
 ![](plots/R2_transformed.png)
 
 These predicted values are for 7 days in the future, since there is higher utility in predicting number of cases 7 days out compared to just the following day. Predicted values can be normalized to produced plots such as the following.
 
-![](plots/predictions_10APR20.png)
-![](plots/predictions_23MAY20.png)
+![](plots/predictions_10Apr20.png)
+![](plots/predictions_23May20.png)
+
+While the goal of the project was to predict a relative risk, the model still does quite well in predicting trends over time. Now that enough data is present to observe steady increases, plateaus, and resurgences of cases, it's great to see that the model was capable of capturing all of these types. Given that the model was only trained on data up until late April, it proves to be working well at predicting new data.
+
+![](plots/Truth_Comparisons.png)
