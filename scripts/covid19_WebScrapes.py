@@ -251,15 +251,20 @@ class Wiki_Scrape :
             state_html = urlopen(state_url)
             state_soup = BeautifulSoup(state_html, 'html.parser')
             if state == 'District of Columbia' :
-                area = state_soup.find('table',{'class':"infobox geography vcard"}).findAll('tr')[21].find('td').getText().replace(u'\xa0', u' ').split(' ')[0]
+                area = state_soup.find('table',{'class':"infobox geography vcard"})\
+                    .findAll('tr')[21].find('td').getText().replace(u'\xa0', u' ').split(' ')[0]
                 output_list.append([state,'11001',state,area])
                 continue
             column_header_use = [i for i,a in 
-                         enumerate(state_soup.find("table",{"class":"wikitable sortable"}).find('tbody').findAll('tr')[0].findAll('th')) if 
-                         'Area' in a.getText()][0]
+                         enumerate(state_soup.find("table",{"class":"wikitable sortable"})\
+                             .find('tbody').findAll('tr')[0].findAll('th')) if 
+                            ('Area' in a.getText()) or ('area' in a.getText())][0]
             to_iter = state_soup.find("table",{"class":"wikitable sortable"}).find('tbody').findAll('tr')[1:]
             for county in to_iter :
-                county_name = county.find('th').find('a').getText()
+                try :
+                    county_name = county.find('th').find('a').getText()
+                except :
+                    continue
                 try :
                     fips_id = county.find('td').find('a').getText()
                 except :
